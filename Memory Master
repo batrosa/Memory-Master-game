@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/brython@3.10.6/brython.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: white;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .label {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .input {
+            font-size: 20px;
+            width: 300px;
+            padding: 10px;
+        }
+        .button {
+            font-size: 20px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #005bb5;
+        }
+    </style>
+</head>
+<body onload="brython()">
+    <div class="container">
+        <div id="level" class="label">Уровень: 1</div>
+        <div id="record" class="label">Рекорд: 0</div>
+        <div id="label" class="label">Нажмите "Начать игру"</div>
+        <input id="input" class="input" type="text" placeholder="Введите числа через пробел" disabled>
+        <br>
+        <button id="button" class="button" onclick="start_game()">Начать игру</button>
+    </div>
+    <script type="text/python">
+        from browser import document, timer
+        import random
+
+        # Инициализация переменных
+        level = 1
+        record = 0
+        sequence = []
+
+        def start_game(event=None):
+            global level, record
+            level = 1
+            record = max(record, level)
+            document["level"].text = f"Уровень: {level}"
+            document["record"].text = f"Рекорд: {record}"
+            next_level()
+
+        def next_level():
+            global sequence, level
+            num_digits = 2 if level == 1 else (3 if level == 2 else (4 if level <= 10 else 5))
+            sequence = [random.randint(1, 100) for _ in range(num_digits)]
+            document["label"].text = "Запоминайте..."
+            document["input"].value = ""
+            document["input"].disabled = True
+            document["button"].style.display = "none"
+            timer.set_timeout(show_sequence, 1000)
+
+        def show_sequence():
+            global sequence
+            document["label"].text = " ".join(map(str, sequence))
+            display_time = 1600 if level <= 10 else 2000
+            timer.set_timeout(ask_for_input, display_time)
+
+        def ask_for_input():
+            document["label"].text = "Введите числа через пробел:"
+            document["input"].disabled = False
+            document["input"].focus()
+            document["button"].style.display = "inline"
+            document["button"].text = "Проверить"
+            document["button"].onclick = check_input
+
+        def check_input(event=None):
+            global level, record
+            user_input = document["input"].value.strip()
+            try:
+                user_sequence = list(map(int, user_input.split()))
+                if user_sequence == sequence:
+                    record = max(record, level)
+                    level += 1
+                    document["level"].text = f"Уровень: {level}"
+                    document["record"].text = f"Рекорд: {record}"
+                    document["label"].text = "Правильно! Переход на следующий уровень."
+                    document["button"].text = "Продолжить"
+                    document["button"].onclick = next_level
+                else:
+                    document["label"].text = f"Неверно! Последовательность была: {' '.join(map(str, sequence))}. Ваш рекорд: {record} уровень."
+                    document["button"].text = "Играть снова"
+                    document["button"].onclick = start_game
+            except ValueError:
+                document["label"].text = "Ошибка! Введите числа через пробел."
+
+    </script>
+</body>
+</html>
